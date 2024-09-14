@@ -1,16 +1,11 @@
 import { Request, Response, NextFunction } from 'express'
 import knex from '../db/db'
-import bcrypt from 'bcryptjs'
-import jwt from 'jsonwebtoken'
+
 
 interface CustomRequest extends Request {
     user?: any ;
   }
 
-// Utility function to generate JWT tokens
-const generateToken = (id: number) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET!, { expiresIn: '1h' })
-}
 
 // Get all authors
 export const getAuthors = async (req: CustomRequest, res: Response, next: NextFunction) => {
@@ -76,7 +71,7 @@ export const deleteAuthor = async (req: CustomRequest, res: Response, next: Next
   }
 }
 
-// A list of authors along with their respective books.
+// A list of authors along with their respective books
 export const getAllAuthorsWithBooks = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authors = await knex('authors')
@@ -104,7 +99,7 @@ export const getAllAuthorsWithBooks = async (req: Request, res: Response, next: 
   }
 };
 
-// A detailed view of an author with a list of their books.
+// A detailed view of an author with a list of their books
 export const getSingleAuthorWithBooks = async (req: Request, res: Response, next: NextFunction) => {
   const { id } = req.params;
   try {
@@ -131,48 +126,5 @@ export const getSingleAuthorWithBooks = async (req: Request, res: Response, next
 };
 
 
-// Register a new user (author)
-export const registerUser = async (req: CustomRequest, res: Response, next: NextFunction) => {
-  const { name, password } = req.body
-  try {
-    const hashedPassword = await bcrypt.hash(password, 10)
-    const [newUser] = await knex('authors').insert({ name, password: hashedPassword }).returning('*')
-    const token = generateToken(newUser.id)
-    res.status(201).json({ message: 'User registered successfully', token })
-  } catch (error) {
-    next(error)
-  }
-}
 
-// Login user
-export const loginUser = async (req: CustomRequest, res: Response, next: NextFunction) => {
-  const { name, password } = req.body
-  try {
-    const user = await knex('authors').where({ name }).first()
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(401).json({ message: 'Invalid credentials' })
-    }
-    const token = generateToken(user.id)
-    res.status(200).json({ message: 'Logged in successfully', token })
-  } catch (error) {
-    next(error)
-  }
-}
 
-// Middleware to protect routes
-export const protect = async (req: CustomRequest, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization
-
-  if (!authHeader || !authHeader.startsWith('Bearer')) {
-    return res.status(401).json({ message: 'Not authorized, token is missing' })
-  }
-
-  const token = authHeader.split(' ')[1]
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!)
-    req.user = decoded
-    next()
-  } catch (error) {
-    return res.status(401).json({ message: 'Not authorized, token is invalid' })
-  }
-}

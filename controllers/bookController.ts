@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import knex from '../db/db'
 
-// Get all books or filter by author ID (e.g., /books?author=6)
+// Get all books or filter by author ID 
 export const getBooks = async (req: Request, res: Response, next: NextFunction) => {
   const { author } = req.query
   try {
@@ -106,3 +106,7 @@ export const getSingleBookWithAuthor = async (req: Request, res: Response, next:
     next(error);
   }
 };
+
+
+
+
